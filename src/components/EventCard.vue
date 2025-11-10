@@ -5,9 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { RouterLink } from 'vue-router'
-import { ref, computed, PropType } from 'vue'
+import { ref, computed} from 'vue'
 import { cn } from '@/lib/utils'
-import { toast } from 'vue-sonner'
 
 // ======================= 1. 定义目标数据结构 =======================
 // 这是我们希望在组件内部使用的、干净且扁平化的格式。
@@ -27,7 +26,7 @@ interface CardEventData {
 // 原始的 API 响应，也可以是我们干净的 CardEventData 格式。
 const props = defineProps({
   event: {
-    type: Object as PropType<any>,
+    type: Object ,
     required: true,
   },
   isLike:{
@@ -43,7 +42,7 @@ const emit = defineEmits<{
 // ======================= 3. 转换逻辑 =======================
 // 这个计算属性是解决方案的核心。它将传入的事件数据
 // 规范化为我们期望的 `CardEventData` 格式。
-const cardData = computed((): CardEventData => {
+const cardData = computed((): any => {
   const rawEvent = props.event;
 
   // 场景A：数据已经是我们的干净格式（例如，来自收藏页 / MongoDB）
@@ -74,13 +73,12 @@ const cardData = computed((): CardEventData => {
 // 现在所有的逻辑都使用干净的 `cardData` 计算属性。
 const isSubmitting = ref(false)
 
-async function updateFavoriteStatusAPI(eventId: string, newStatus: boolean): Promise<boolean> {
-  console.log(`API 调用：正在设置事件 ${eventId} 的收藏状态为 ${newStatus}...`)
-  await new Promise(resolve => setTimeout(resolve, 500))
-  console.log(`API 成功：事件 ${eventId} 的状态已更新。`);
-  // 在真实应用中，这里会是你的 `axios.post` 或 `fetch` 调用。
-  return true
-}
+// async function updateFavoriteStatusAPI(eventId: string, newStatus: boolean) {
+//   console.log(`API 调用：正在设置事件 ${eventId} 的收藏状态为 ${newStatus}...`)
+//   console.log(`API 成功：事件 ${eventId} 的状态已更新。`);
+//   // 在真实应用中，这里会是你的 `axios.post` 或 `fetch` 调用。
+//   return true
+// }
 
 async function handleToggleFavorite() { 
    emit('toggle-favorite', cardData.value); 

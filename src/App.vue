@@ -1,4 +1,3 @@
-<!-- src/App.vue -->
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { Search, Heart, Menu, X } from 'lucide-vue-next' // 1. 导入 X 图标和 ref

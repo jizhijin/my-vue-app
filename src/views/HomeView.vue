@@ -2,15 +2,11 @@
 <script setup lang="ts">
 import {
   Activity,
-  ArrowUpRight,
-  CircleUser,
   CreditCard,
   DollarSign,
   Download,
   LayoutDashboard,
-  Menu,
   Package2,
-  Search,
   Users,
 } from 'lucide-vue-next'
 

@@ -1,26 +1,89 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed} from 'vue'
+import type{Ref} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ExternalLink, Facebook, Heart, Share2, Twitter } from 'lucide-vue-next'
+import { ArrowLeft, ExternalLink, Facebook, Heart,  Twitter } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { toast } from 'vue-sonner' // 1. Import toast
-import { getArtistAlbums, getArtistInfo, getEvent, getSpotifyToken } from '@/api'
+import { getArtistAlbums, getArtistInfo, getEvent } from '@/api'
 import type { ArtistInfo } from '@/api/types'
 import { useFavorites } from '@/composables/useFavorites'
-const { favoriteIds, isFavorite, removeFavorite, addFavorite } = useFavorites()
+const {  isFavorite, removeFavorite, addFavorite } = useFavorites()
+
+  interface AlbumImage {
+  url: string;
+}
+
+// 定义单个专辑的类型
+interface Album {
+  id: string; // 或者 number，根据 API
+  name: string;
+  images: AlbumImage[];
+  release_date: string;
+  total_tracks: number;
+}
+
+// 定义 getArtistAlbums API 返回的数据结构
+interface ArtistAlbumsResponse {
+  items: Album[];
+  // 可能还有 total, limit 等，但我们只关心 items
+}
+
+// ... 其他 interface 定义 ...
+
+interface EventDetails {
+  id: string;
+  title: string;
+  isLike: boolean;
+  ticketUrl: string;
+  date: string;
+  artists: string[];
+  venue: {
+    name: string;
+    address: string;
+    image: string;
+    rules: {
+      parking: string;
+      general: string;
+      child: string;
+    };
+    url: string;
+  };
+  classifications: {
+    segment: string;
+    genre: string;
+    subGenre: string;
+    type: string;
+    subType: string;
+  };
+  ticketStatus: string;
+  seatmap: string;
+  artistInfo: {
+    name: string;
+    avatar: string;
+    followers: number;
+    popularity: string;
+    genres: string;
+    albums: Album[]; // <-- 复用我们之前定义的 Album 类型！
+    uri: string;
+  };
+}
+
 
 const route = useRoute()
 const router = useRouter()
 
 const eventId = route.params.id as string
-const eventData = ref<any>(null)
+const eventData: Ref<EventDetails | null> = ref(null)
+
 const isLoading = ref(true)
 
-const albRes = ref(null)
+const albRes:Ref<ArtistAlbumsResponse | null> = ref(null)
+
+  
 
 
 async function fetchEventDetails() {
@@ -37,6 +100,8 @@ async function fetchEventDetails() {
     const res = await getArtistAlbums(artistInfo.id)
     albRes.value = res.data
   }
+
+
   
 
   
@@ -52,7 +117,7 @@ async function fetchEventDetails() {
     venue: {
       name: data._embedded.venues[0].name,
       address: data._embedded.venues[0]?.address?.line1+' '+data._embedded.venues[0]?.city?.name+' '+data._embedded.venues[0]?.state?.stateCode+' '+data._embedded.venues[0]?.country?.countryCode,
-      image: data._embedded.venues[0]?.images?[0]?.url:'',
+      image: data._embedded.venues[0]?.images?data._embedded.venues[0]?.images[0].url:'',
       rules: {
          parking: data._embedded.venues[0]?.parkingDetail,
          general: data._embedded.venues[0]?.generalInfo?.generalRule,
@@ -75,7 +140,7 @@ async function fetchEventDetails() {
       followers: artistInfo?.followers.total,
       popularity: artistInfo?.popularity+"%",
       genres: artistInfo?.genres.join(', '),
-      albums: albRes.value?.items?albRes.value?.items:[],
+      albums: albRes.value?albRes.value.items:[],
       uri: artistInfo?.external_urls.spotify
     }
   }
@@ -83,12 +148,26 @@ async function fetchEventDetails() {
 }
 
 function handleToggleFavorite() {
-  if (!eventData.value) return
+  // 这个 if 判断非常重要，它不仅防止了 null 错误，还告诉了 TypeScript 在这之后 eventData.value 是存在的
+  if (!eventData.value) return 
+
+  const data = {
+    id: eventData.value.id,
+    name: eventData.value.title || 'N/A',
+    image: eventData.value.ticketUrl,
+    // ✅ 修正后的代码
+    category: eventData.value.classifications.segment ?? 'N/A', // 使用 .value
+    date: eventData.value.date.split(' ')[0] ?? '',             // 使用 .value
+    time: eventData.value.date.split(' ')[1] ?? '',             // 使用 .value
+    venue: eventData.value.venue.name ?? '场馆待定',            // 使用 .value
+  }
   
-  if (isFavorite(eventData.value.id).value) {
-    removeFavorite(eventData.value)
+  // 这里的 isFavorite(data) 是错的，因为 isFavorite(eventData)
+  // 你应该传入符合 useFavorites 期望的格式，或者直接用 id
+  if (isFavorite(data)) { // 假设 isFavorite 接收整个 event 对象
+    removeFavorite(data)
   } else {
-    addFavorite(eventData.value)
+    addFavorite(data)
   }
 }
 
@@ -140,8 +219,19 @@ function handleToggleFavorite() {
 
 const orderedGenres = computed(() => {
   if (!eventData.value?.classifications) return []
-  const order = ['segment', 'genre', 'subGenre', 'type', 'subType']
+
+  // Tell TypeScript that 'order' is an array of keys from the classifications object
+  const order: (keyof typeof eventData.value.classifications)[] = [
+    'segment', 
+    'genre', 
+    'subGenre', 
+    'type', 
+    'subType'
+  ]
+
   const classifications = eventData.value.classifications
+  
+  // Now this line is type-safe!
   return order
     .map(key => classifications[key])
     .filter(item => item && item !== 'Undefined')
@@ -277,7 +367,7 @@ onMounted(fetchEventDetails)
           <h3 class="text-xl font-semibold mb-4">Albums</h3>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             <div v-for="album in eventData.artistInfo.albums" :key="album.id" class="rounded-md border-2 overflow-hidden ">
-              <img :src="album.images[0].url" class=" aspect-square object-cover mb-2" />
+              <img :src="album.images[0]?.url" class=" aspect-square object-cover mb-2" />
               <p class="font-medium text-sm truncate px-2">{{ album.name }}</p>
               <p class="text-xs text-muted-foreground px-2">{{ album.release_date }} </p>
               <p class="text-xs text-muted-foreground px-2 mb-2">{{ album.total_tracks }} tracks</p>

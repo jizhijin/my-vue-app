@@ -1,7 +1,7 @@
 <!-- src/views/SearchView.vue -->
 <script setup lang="ts">
 // 变更: 导入 watch 用于监听输入变化
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { Search, Frown } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,7 @@ import EventCard from '../components/EventCard.vue'
 import { getEvents, getSuggest } from '@/api'
 import { useFavorites } from '@/composables/useFavorites'
 import axios from 'axios'
-const { favoriteIds, isFavorite, removeFavorite, addFavorite } = useFavorites()
+const { isFavorite, removeFavorite, addFavorite } = useFavorites()
 
 
 // --- 响应式状态 ---
@@ -37,20 +37,12 @@ const searchParams = reactive({
 
 const errors = reactive<Record<string, string>>({})
 
-const categories = [
-    { value: 'all', label: 'All' },
-    { value: 'music', label: 'Music' },
-    { value: 'sports', label: 'Sports' },
-    { value: 'arts', label: 'Arts & Theater' },
-    { value: 'film', label: 'Film' },
-    { value: 'misc', label: 'Miscellaneous' },
-]
 
-const selectedCategoryLabel = computed(() => {
-    return categories.find(cat => cat.value === searchParams.category)?.label || 'Select a category'
-})
 
-const validationError = ref('')
+// const selectedCategoryLabel = computed(() => {
+//     return categories.find(cat => cat.value === searchParams.category)?.label || 'Select a category'
+// })
+
 const isLoading = ref(false)
 const hasSearched = ref(false)
 const searchResults = ref<any[]>([])
@@ -67,24 +59,24 @@ const debounceTimer = ref<number | null>(null)
 
 
 // --- 模拟API数据 ---
-const MOCK_EVENTS = [
-    { id: '1', title: "Kiss 108's ", venue: 'TD Garden', date: 'Jan 14, 2025, 08:00 PM', category: 'Music', image: 'https://s1.ticketm.net/dam/a/c62/0636ff21-e369-4b8c-bee4-214ea0a81c62_1339761_CUSTOM.jpg', isLike: true },
-    { id: '2', title: 'Ed SheeTour', venue: 'Gillette Stadium', date: 'Oct 25, 2025, 05:30 PM', category: 'Music', image: 'https://s1.ticketm.net/dam/a/c81/e57922d5-7b53-43af-8854-c8c36391cc81_1821031_TABLET_LANDSCAPE_LARGE_16_9.jpg', isLike: false },
-    { id: '3', title: 'Ed SheOP Tour', venue: 'Gillette Stadium', date: 'Oct 26, 2025, 05:30 PM', category: 'Music', image: 'https://s1.ticketm.net/dam/a/c81/e57922d5-7b53-43af-8854-c8c36391cc81_1821031_TABLET_LANDSCAPE_LARGE_16_9.jpg', isLike: true },
-]
+// const MOCK_EVENTS = [
+//     { id: '1', title: "Kiss 108's ", venue: 'TD Garden', date: 'Jan 14, 2025, 08:00 PM', category: 'Music', image: 'https://s1.ticketm.net/dam/a/c62/0636ff21-e369-4b8c-bee4-214ea0a81c62_1339761_CUSTOM.jpg', isLike: true },
+//     { id: '2', title: 'Ed SheeTour', venue: 'Gillette Stadium', date: 'Oct 25, 2025, 05:30 PM', category: 'Music', image: 'https://s1.ticketm.net/dam/a/c81/e57922d5-7b53-43af-8854-c8c36391cc81_1821031_TABLET_LANDSCAPE_LARGE_16_9.jpg', isLike: false },
+//     { id: '3', title: 'Ed SheOP Tour', venue: 'Gillette Stadium', date: 'Oct 26, 2025, 05:30 PM', category: 'Music', image: 'https://s1.ticketm.net/dam/a/c81/e57922d5-7b53-43af-8854-c8c36391cc81_1821031_TABLET_LANDSCAPE_LARGE_16_9.jpg', isLike: true },
+// ]
 
-// ======================= 新增：自动补全的模拟数据 =======================
-// 模拟可以从 API 返回的关键词建议
-const MOCK_AUTOCOMPLETE_DATA = [
-    'Taylor Swift Concert',
-    'Ed Sheeran Tour',
-    'Boston Celtics Game',
-    'Hamilton Musical',
-    'Local Art Fair',
-    'Tech Conference 2025',
-    'Jingle Ball',
-    'Comedy Night',
-]
+// // ======================= 新增：自动补全的模拟数据 =======================
+// // 模拟可以从 API 返回的关键词建议
+// const MOCK_AUTOCOMPLETE_DATA = [
+//     'Taylor Swift Concert',
+//     'Ed Sheeran Tour',
+//     'Boston Celtics Game',
+//     'Hamilton Musical',
+//     'Local Art Fair',
+//     'Tech Conference 2025',
+//     'Jingle Ball',
+//     'Comedy Night',
+// ]
 // ====================================================================
 
 
@@ -130,7 +122,7 @@ async function fetchSuggestions(keyword: string) {
     const result = await getSuggest(keyword)
     console.log(result);
 
-    suggestions.value = result.data.map(item => item.name)
+    suggestions.value = result.data.map((item:any) => item.name)
     showSuggestions.value = suggestions.value.length > 0
     // --- MOCK 结束 ---
 }
@@ -240,7 +232,7 @@ async function handleSearch() {
         console.log('Form is valid. Searching with:', searchParams)
         // searchResults.value = MOCK_EVENTS
         // hasSearched.value = true
-        let ipRes = ''
+        let ipRes = {ip:''}
         if (searchParams.autoDetect) {
             ipRes = await getIpAddress()
         }else{
@@ -254,7 +246,7 @@ async function handleSearch() {
         const data = {
             keyword: searchParams.keywords,
             category: searchParams.category,
-            ipAddress: ipRes.ip,
+            ipAddress: ipRes.ip as string,
             location: searchParams.location,
             latlong: searchParams.latlong,
             autoDetect: searchParams.autoDetect,

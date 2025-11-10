@@ -1,5 +1,5 @@
 import { addFavor, deleteFavor, getFavor } from '@/api';
-import { ref, computed, watch } from 'vue'
+import { ref, computed} from 'vue'
 import { toast } from 'vue-sonner'
 
 export interface CardEventData {
@@ -14,17 +14,17 @@ export interface CardEventData {
 }
 
 // 在真实应用中，这会从localStorage或API初始化
-const favoriteIds = ref<CardEventData[]>([])
+const favoriteIds = ref<any[]>([])
 
 // --- 模拟后端 API ---
-async function apiAddToFavorites(event:CardEventData): Promise<void> {
+async function apiAddToFavorites(event:any): Promise<void> {
   console.log(`[API] Adding event ${event.id} to favorites...`)
 //   await new Promise(resolve => setTimeout(resolve, 300))
     await addFavor(event)
   console.log(`[API] Event ${event.id} added.`)
 }
 
-async function apiRemoveFromFavorites(event:CardEventData): Promise<void> {
+async function apiRemoveFromFavorites(event:any): Promise<void> {
   console.log(`[API] Removing event ${event.id} from favorites...`)
 //   await new Promise(resolve => setTimeout(resolve, 300))
   await deleteFavor(event.id)
@@ -44,7 +44,7 @@ export function useFavorites() {
   getFavorites()
   
   // 添加到收藏
-  const addFavorite = async (event:CardEventData) => {
+  const addFavorite = async (event:any) => {
     if (favoriteIds.value.find(item => item.id === event.id)) {
         console.log(`[API] Event ${event.id} already exists in favorites.`);
         
@@ -70,7 +70,7 @@ export function useFavorites() {
   }
 
   // 从收藏中移除 (带Undo功能)
-  const removeFavorite = (event: CardEventData) => {
+  const removeFavorite = (event: any) => {
     if (!favoriteIds.value.find(item => item.id === event.id)) return
 
     // 立即提交到数据库并更新本地状态
@@ -91,7 +91,7 @@ export function useFavorites() {
       },
       duration: 4000,
         });
-        getFavor().then((res) => {
+        getFavor().then(() => {
             getFavorites()
         })
 
@@ -120,7 +120,7 @@ export function useFavorites() {
   }
   
   // 检查某个事件是否被收藏
-  const isFavorite = (event: CardEventData) => {
+  const isFavorite = (event: any) => {
     // if(favoriteIds.value.length === 0){
     //     getFavor().then(res => {
     //         favoriteIds.value = res.data

@@ -2,7 +2,6 @@
 import { ref, onMounted, computed } from 'vue'
 import EventCard from '@/components/EventCard.vue'
 import { useFavorites } from '@/composables/useFavorites'
-import { allEvents } from '@/data/mock-events' // 假设你有一个包含所有事件的模拟数据文件
 
 const { favoriteIds, isFavorite, removeFavorite } = useFavorites()
 const isLoading = ref(true)
